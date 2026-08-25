@@ -1,0 +1,67 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: drogueria_db
+    profiles: ["local-mysql"]
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-drogueria}
+      MYSQL_USER: ${DB_USER:-drogueria}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-drogueria}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=caching_sha2_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    container_name: drogueria_phpmyadmin
+    profiles: ["local-mysql"]
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      UPLOAD_LIMIT: 64M
+    ports:
+      - "${PHPMYADMIN_PORT:-8080}:80"
+
+  web:
+    build: .
+    container_name: drogueria_web
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_ENGINE: ${DB_ENGINE:-django.db.backends.mysql}
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-drogueria}
+      DB_USER: ${DB_USER:-drogueria}
+      DB_PASSWORD: ${DB_PASSWORD:-drogueria}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,web,testserver}
+      ONEDRIVE_IMAGENES_LOCAL_PATH: /app/data/Imagenes productos Madherdei
+      ONEDRIVE_CATALOGO_LOCAL_PATH: /app/catalogo final SIIGO drogueria Madherdei.xlsx
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    volumes:
+      - .:/app
+    command: python manage.py runserver 0.0.0.0:8000
+
+volumes:
+  mysql_data:

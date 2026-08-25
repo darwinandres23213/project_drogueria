@@ -1,0 +1,11 @@
+Django==5.2.17
+djangorestframework==3.18.0
+django-cors-headers==4.9.0
+django-filter==25.1
+python-dotenv==1.1.0
+mysqlclient==2.2.7
+openpyxl==3.1.5
+requests==2.32.4
+rapidfuzz==3.13.0
+gunicorn==23.0.0
+whitenoise==6.9.0
